@@ -21,29 +21,25 @@ Este proyecto es una plataforma de gestión de inventario y dashboard analítico
    ```
 
 2. **Configurar Variables de Entorno:**
-   - **Backend**: Copia los valores necesarios o usa los preconfigurados en `src/common/envs/development.env`.
+   - **Backend**: 
+     ```bash
+     cd backend
+     cp .env.example .env
+     ```
    - **Frontend**: 
      ```bash
      cd frontend
      cp .env.example .env
      ```
 
-3. **Levantar la Infraestructura (Base de Datos):**
+3. **Levantar el Backend (Totalmente Automatizado):**
    ```bash
    cd backend
-   docker-compose up -d
+   docker-compose up --build -d
    ```
+   *Este comando levantará la base de datos, ejecutará las migraciones e insertará los datos de prueba (seeds) automáticamente.*
 
-4. **Preparar el Backend:**
-   ```bash
-   npm install
-   npm run build
-   npm run migration:run
-   npm run seed
-   npm run start:dev
-   ```
-
-5. **Levantar el Frontend:**
+4. **Levantar el Frontend:**
    ```bash
    cd ../frontend
    npm install
