@@ -6,7 +6,7 @@ import {
   PrimaryColumn,
   ManyToMany,
 } from 'typeorm';
-import { User } from './user.entity';
+import type { User } from './user.entity';
 
 @Entity()
 export class Role {
@@ -16,7 +16,11 @@ export class Role {
   @Column({ type: 'varchar', length: 120, unique: true })
   public name: string;
 
-  @ManyToMany(() => User, (user) => user.roles)
+  @ManyToMany(
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    () => (require('./user.entity') as any).User,
+    (user) => user.roles,
+  )
   public users: User[];
 
   @CreateDateColumn({ type: 'timestamp' })

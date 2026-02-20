@@ -7,6 +7,12 @@ import { TestDetails } from './test.details';
 export type ProductDetails = ComputerDetails | TestDetails;
 
 export function ProductDetailsTypeFn(options: TypeHelpOptions) {
+  // If details or category is missing, default to ComputerDetails (or handle gracefully)
+  // Validation will catch the missing fields later.
+  if (!options.object?.details?.category) {
+    return ComputerDetails;
+  }
+
   switch (options.object?.details?.category) {
     case Categories.Computers:
       return ComputerDetails;

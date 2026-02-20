@@ -1,5 +1,12 @@
-import { Expose } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+} from 'class-validator';
+import { RoleDto } from 'src/api/role/dto/role.dto';
 
 export class CreateUserDto {
   @IsEmail()
@@ -17,4 +24,36 @@ export class UserDto {
 
   @Expose()
   public email: string;
+
+  @Expose()
+  @Type(() => RoleDto)
+  public roles: RoleDto[];
+}
+
+export class UpdateUserRolesDto {
+  @IsArray()
+  @IsNumber({}, { each: true })
+  public roleIds: number[];
+}
+
+export class CreateUserByAdminDto extends CreateUserDto {
+  @IsArray()
+  @IsNumber({}, { each: true })
+  public roleIds: number[];
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  public newPassword: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  public oldPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  public newPassword: string;
 }

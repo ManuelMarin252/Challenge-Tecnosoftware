@@ -11,6 +11,12 @@ import {
 import { Product } from './product.entity';
 import { Role } from './role.entity';
 
+export enum RoleEnum {
+  ADMIN = 'admin',
+  MERCHANT = 'merchant',
+  CUSTOMER = 'customer',
+}
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -27,7 +33,7 @@ export class User {
   public roles: Role[];
 
   @OneToMany(() => Product, (product) => product.merchant)
-  public products: Product;
+  public products: Product[];
 
   @CreateDateColumn({ type: 'timestamp' })
   public createdAt!: Date;

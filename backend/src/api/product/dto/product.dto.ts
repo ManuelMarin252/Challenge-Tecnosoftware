@@ -15,6 +15,18 @@ export class CreateProductDto {
   @IsNumber()
   @IsNotEmpty()
   public categoryId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  public title: string;
+
+  @IsString()
+  @IsNotEmpty()
+  public code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  public description: string;
 }
 
 export class ProductDetailsDto {

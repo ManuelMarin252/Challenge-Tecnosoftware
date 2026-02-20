@@ -17,7 +17,7 @@ export class Category {
   public name: string;
 
   @OneToMany(() => Product, (product) => product.category)
-  products: Product;
+  products: Product[];
 
   @CreateDateColumn({ type: 'timestamp' })
   public createdAt!: Date;

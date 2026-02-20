@@ -112,6 +112,7 @@ describe('AuthService', () => {
         password: 'password',
       });
       expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('user');
     });
 
     it('should throw error if not registered', async () => {

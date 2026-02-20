@@ -1,14 +1,12 @@
-import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { configuration } from 'src/config';
-import { TypeOrmConfigService } from 'src/database/typeorm/typeorm.service';
-import { AuthModule } from '../../auth/auth.module';
 import { RoleController } from './role.controller';
 import { Role } from '../../../database/entities/role.entity';
 import { RoleIds, Roles } from '../enum/role.enum';
 import { RoleService } from '../services/role.service';
 import { UserService } from 'src/api/user/services/user.service';
+
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 
 describe('RoleController', () => {
   let controller: RoleController;
@@ -39,12 +37,12 @@ describe('RoleController', () => {
           useValue: fakeUserService,
         },
       ],
-      imports: [
-        AuthModule,
-        ConfigModule.forRoot({ load: [configuration], isGlobal: true }),
-        TypeOrmModule.forRootAsync({ useClass: TypeOrmConfigService }),
-      ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<RoleController>(RoleController);
   });

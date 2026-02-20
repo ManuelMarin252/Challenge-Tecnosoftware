@@ -1,4 +1,13 @@
 import { IsNotEmpty, IsNumber } from 'class-validator';
+import { Expose } from 'class-transformer';
+
+export class RoleDto {
+  @Expose()
+  public id: number;
+
+  @Expose()
+  public name: string;
+}
 
 export class AssignRoleDto {
   @IsNumber()

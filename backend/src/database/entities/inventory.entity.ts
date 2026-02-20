@@ -1,40 +1,27 @@
 import {
   Entity,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  JoinColumn,
   PrimaryGeneratedColumn,
-  ManyToOne,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
-import { Country } from './country.entity';
-import { ProductVariation } from './productVariation.entity';
+import { Product } from './product.entity';
 
 @Entity()
 export class Inventory {
   @PrimaryGeneratedColumn()
-  public id!: number;
+  id: number;
 
-  @ManyToOne(() => ProductVariation)
-  @JoinColumn({ name: 'productVariationId' })
-  public productVariation: ProductVariation;
+  @Column({ type: 'int', default: 0 })
+  stock: number;
 
-  @Column({ type: 'int' })
-  public productVariationId: number;
+  @Column({ type: 'int', default: 5 })
+  minStock: number;
 
-  @ManyToOne(() => Country)
-  @JoinColumn({ name: 'countryCode' })
-  public country: Country;
-
-  @Column({ type: 'varchar', length: 7 })
-  public countryCode: string;
+  @OneToOne(() => Product)
+  @JoinColumn()
+  product: Product;
 
   @Column({ type: 'int' })
-  public quantity: number;
-
-  @CreateDateColumn({ type: 'timestamp' })
-  public createdAt!: Date;
-
-  @UpdateDateColumn({ type: 'timestamp' })
-  public updatedAt!: Date;
+  productId: number;
 }

@@ -1,10 +1,10 @@
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsDefined,
   IsNumber,
   IsString,
   ValidateNested,
+  IsOptional,
 } from 'class-validator';
 import {
   ProductDetails,
@@ -17,11 +17,12 @@ import {
   UpdateDateColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  JoinColumn,
   Index,
+  DeleteDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { Category } from './category.entity';
-import { User } from './user.entity';
+import type { User } from './user.entity';
 
 @Entity()
 export class Product {
@@ -42,22 +43,22 @@ export class Product {
   public title: string;
 
   @Column({ type: 'varchar', nullable: true })
-  @IsDefined()
+  @IsOptional()
   @IsString()
   public variationType: string;
 
   @Column({ type: 'text', nullable: true })
-  @IsDefined()
+  @IsOptional()
   @IsString()
   public description?: string | null;
 
   @Column({ type: 'text', array: true, default: [] })
-  @ArrayMinSize(1)
+  @IsOptional()
   @IsString({ each: true })
   public about?: string[];
 
   @Column({ type: 'jsonb', nullable: true })
-  @IsDefined()
+  @IsOptional()
   @Type(ProductDetailsTypeFn)
   @ValidateNested()
   public details: Partial<ProductDetails> | null;
@@ -70,7 +71,11 @@ export class Product {
   @IsNumber()
   public merchantId: number;
 
-  @ManyToOne(() => User, (user) => user.products)
+  @ManyToOne(
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    () => (require('./user.entity') as any).User,
+    (user) => user.products,
+  )
   @JoinColumn({ name: 'merchantId' })
   public merchant: User;
 
@@ -88,6 +93,9 @@ export class Product {
 
   @UpdateDateColumn({ type: 'timestamp' })
   public updatedAt!: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  public deletedAt?: Date;
 }
 
 export enum VariationTypes {

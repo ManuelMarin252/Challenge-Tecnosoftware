@@ -23,7 +23,9 @@ export class AuthService {
 
   async login(user: CreateUserDto) {
     const { email, password } = user;
-    const alreadyExistingUser = await this.userService.findByEmail(email);
+    const alreadyExistingUser = await this.userService.findByEmail(email, {
+      roles: true,
+    });
     if (!alreadyExistingUser)
       throw new UnauthorizedException(errorMessages.auth.wronCredentials);
 
@@ -33,10 +35,17 @@ export class AuthService {
     );
     if (!isValidPassword)
       throw new UnauthorizedException(errorMessages.auth.wronCredentials);
-    return this.generateToken({
-      id: alreadyExistingUser.id,
-      email,
-    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = alreadyExistingUser;
+
+    return {
+      ...(await this.generateToken({
+        id: alreadyExistingUser.id,
+        email,
+      })),
+      user: userWithoutPassword,
+    };
   }
 
   async register(user: CreateUserDto) {

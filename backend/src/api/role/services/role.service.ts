@@ -33,4 +33,8 @@ export class RoleService {
     }
     return role;
   }
+
+  async findAll() {
+    return this.rolesRepository.find();
+  }
 }

@@ -1,94 +1,149 @@
-import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { User } from '../../../database/entities/user.entity';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
-import { Repository } from 'typeorm';
-import { errorMessages } from 'src/errors/custom';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from 'src/database/entities/user.entity';
+import { Role } from 'src/database/entities/role.entity';
+import { ConflictException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
 describe('UserService', () => {
   let service: UserService;
-  let fakeUserRepo: Partial<Repository<User>>;
-  const user = {
-    id: 1,
-    email: 'test@test.com',
-    password: '123456678',
-  } as User;
+  // let userRepository: Repository<User>;
+
+  const mockRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    manager: {
+      getRepository: jest.fn().mockReturnValue({
+        find: jest.fn(),
+      }),
+    },
+  };
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-    fakeUserRepo = {
-      findOne: jest.fn().mockImplementation(() => Promise.resolve(user)),
-      save: jest.fn().mockImplementation(() => Promise.resolve(user)),
-      create: jest.fn().mockImplementation(() => Promise.resolve(user)),
-    };
-    const moduleRef = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: fakeUserRepo,
+          useValue: mockRepository,
         },
       ],
     }).compile();
 
-    service = moduleRef.get<UserService>(UserService);
+    service = module.get<UserService>(UserService);
+    // userRepository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('findById: get user by Id', () => {
-    it('should success', async () => {
-      const result = await service.findById(1);
+  describe('createByAdmin', () => {
+    it('should create a user with roles', async () => {
+      const dto = { email: 'test@test.com', password: 'password' };
+      const roleIds = [1];
+      const roles = [{ id: 1, name: 'Customer' }];
+      const hashedPassword = 'hashedPassword';
 
-      expect(fakeUserRepo.findOne).toBeCalled();
-      expect(result.id).toBe(user.id);
-    });
+      mockRepository.manager.getRepository(Role).find.mockResolvedValue(roles);
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockImplementation(() => Promise.resolve(hashedPassword));
+      mockRepository.create.mockReturnValue({
+        ...dto,
+        password: hashedPassword,
+        roles,
+      });
+      mockRepository.save.mockResolvedValue({
+        id: 1,
+        ...dto,
+        password: hashedPassword,
+        roles,
+      });
 
-    it('should throw error if not found', async () => {
-      fakeUserRepo.findOne = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(null));
-      const result = service.findById(1);
+      const result = await service.createByAdmin(dto as any, roleIds);
 
-      expect(fakeUserRepo.findOne).toBeCalled();
-      expect(result).rejects.toThrowError(errorMessages.user.notFound.message);
-    });
-  });
-
-  describe('findByEmail: get user by email', () => {
-    it('should success', async () => {
-      const result = await service.findByEmail('test@test.com');
-      expect(fakeUserRepo.findOne).toBeCalled();
-      expect(result.id).toBe(user.id);
-    });
-
-    it('will be null', async () => {
-      fakeUserRepo.findOne = jest
-        .fn()
-        .mockImplementation(() => Promise.resolve(null));
-      const result = await service.findByEmail('notFound@test.com');
-
-      expect(fakeUserRepo.findOne).toBeCalled();
-      expect(result).toBe(null);
-    });
-  });
-
-  describe('save: save with userRepository', () => {
-    it('should success', async () => {
-      const result = await service.save(user);
-      expect(fakeUserRepo.save).toBeCalled();
-      expect(result.id).toBe(user.id);
+      expect(
+        mockRepository.manager.getRepository(Role).find,
+      ).toHaveBeenCalledWith({ where: { id: expect.any(Object) } });
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        email: dto.email,
+        password: hashedPassword,
+        roles,
+      });
+      expect(result).toEqual({
+        id: 1,
+        ...dto,
+        password: hashedPassword,
+        roles,
+      });
     });
   });
 
-  describe('create: create user', () => {
-    it('should success', async () => {
-      const result = await service.createUser(user);
-      expect(fakeUserRepo.create).toBeCalled();
-      expect(fakeUserRepo.save).toBeCalled();
-      expect(result.id).toBe(user.id);
+  describe('resetPassword', () => {
+    it('should reset user password', async () => {
+      const user = { id: 1, password: 'oldPassword' };
+      const newPassword = 'newPassword';
+      const hashedPassword = 'hashedNewPassword';
+
+      mockRepository.findOne.mockResolvedValue(user);
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockImplementation(() => Promise.resolve(hashedPassword));
+      mockRepository.save.mockResolvedValue({
+        ...user,
+        password: hashedPassword,
+      });
+
+      await service.resetPassword(1, newPassword);
+
+      expect(mockRepository.save).toHaveBeenCalledWith({
+        ...user,
+        password: hashedPassword,
+      });
+    });
+  });
+
+  describe('changePassword', () => {
+    it('should change password if old password matches', async () => {
+      const user = { id: 1, password: 'hashedOldPassword' };
+      const oldPassword = 'oldPassword';
+      const newPassword = 'newPassword';
+      const hashedNewPassword = 'hashedNewPassword';
+
+      mockRepository.findOne.mockResolvedValue(user);
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(true));
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockImplementation(() => Promise.resolve(hashedNewPassword));
+      mockRepository.save.mockResolvedValue({
+        ...user,
+        password: hashedNewPassword,
+      });
+
+      await service.changePassword(1, oldPassword, newPassword);
+
+      expect(mockRepository.save).toHaveBeenCalledWith({
+        ...user,
+        password: hashedNewPassword,
+      });
+    });
+
+    it('should throw ConflictException if old password does not match', async () => {
+      const user = { id: 1, password: 'hashedOldPassword' };
+      mockRepository.findOne.mockResolvedValue(user);
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(false));
+
+      await expect(
+        service.changePassword(1, 'wrongPassword', 'new'),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });
